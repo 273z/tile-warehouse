@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>瓷砖仓库</title>
+<!-- PWA 支持：添加到桌面 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="瓷砖仓库">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="application-name" content="瓷砖仓库">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23f0a040'/><text x='256' y='340' text-anchor='middle' font-size='260' font-weight='bold' fill='white'>🏠</text></svg>">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi55S15bCE5Lq65a2QIiwic2hvcnRfbmFtZSI6I+WcuuWdkCIsInN0YXJ0X3VybCI6Ii4vIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBhMGEwZiIsInRoZW1lX2NvbG9yIjoiIzBhMGEwZiIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWwsPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJz48cmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzgwJyBmaWxsPSclMjNmMGEwNDAnLz48dGV4dCB4PScyNTYnIHk9JzM0MCcgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1zaXplPScyNjAnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPSd3aGl0ZSc+8J+MqjwvdGV4dD48L3N2Zz4iLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #14141c;
+    --surface2: #1c1c28;
+    --accent: #f0a040;
+    --text: #f4f2ec;
+    --text-dim: #7a7a8c;
+    --border: #2a2a3a;
+    --red-bg: #b83030;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding: 0 16px 40px;
+  }
+
+  /* Header - 简洁 */
+  .header {
+    padding: 16px 0 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+  .header .count {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Search - 大按钮 */
+  .search-area {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .search-area input {
+    width: 100%;
+    padding: 20px 70px 20px 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .search-area input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(240,160,64,0.15);
+  }
+  .search-area input::placeholder { color: var(--text-dim); font-weight: 400; font-size: 17px; }
+  .search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .search-btn:active { transform: translateY(-50%) scale(0.95); }
+
+  /* Suggestions */
+  .search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .search-suggestions.show { display: block; }
+  .suggestion-item {
+    padding: 14px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:active { background: var(--surface2); }
+  .sug-model { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .sug-zone { font-size: 14px; color: var(--text-dim); }
+
+  /* Result */
+  .result-area {
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+  .result-area.show { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Model */
+  .model-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .model-section .label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+  .model-section .value {
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  /* Location - 超大红色 */
+  .location-section {
+    background: linear-gradient(145deg, var(--red-bg) 0%, #a02020 100%);
+    border-radius: 24px;
+    padding: 28px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(180,48,48,0.4);
+  }
+  .location-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 160px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .location-section .label {
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 5px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .location-section .value {
+    font-size: 96px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 6px;
+    line-height: 1;
+    position: relative;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  /* 长位置文字 - 小字一行显示 */
+  .location-section.long .value {
+    font-size: 32px;
+    letter-spacing: 2px;
+  }
+
+  /* Note */
+  .note-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .note-section .label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+  .note-section .value {
+    font-size: 18px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* 分隔线 */
+  .result-divider {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 20px 0 30px;
+    border-radius: 2px;
+  }
+
+  /* No Result */
+  .no-result {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    display: none;
+  }
+  .no-result.show { display: block; }
+  .no-result .icon { font-size: 56px; margin-bottom: 16px; }
+
+  /* Tabs - 底部固定 */
+  .bottom-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 16px 12px;
+    gap: 10px;
+    z-index: 50;
+  }
+  .bottom-tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .bottom-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* List */
+  .list-area { display: none; padding-bottom: 80px; }
+  .list-area.show { display: block; }
+  .list-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .list-item-info { flex: 1; min-width: 0; }
+  .list-item-model { font-size: 17px; font-weight: 800; color: var(--accent); margin-bottom: 4px; letter-spacing: 1px; }
+  .list-item-detail { font-size: 13px; color: var(--text-dim); display: flex; gap: 12px; flex-wrap: wrap; }
+  .list-item-actions {
+    display: none;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .list-item.expanded .list-item-actions {
+    display: flex;
+  }
+  .btn-action {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn-action:active { background: var(--border); }
+  .btn-action.del { color: #d04040; border-color: rgba(208,64,64,0.3); }
+  .btn-action.del:active { background: rgba(208,64,64,0.15); }
+  .list-item-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+    opacity: 0.5;
+  }
+  .list-item.expanded .list-item-hint { display: none; }
+
+  /* Add Form */
+  .add-area { display: none; padding-bottom: 80px; }
+  .add-area.show { display: block; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 16px;
+    outline: none;
+    font-family: inherit;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: none; height: 80px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .btn {
+    flex: 1; padding: 16px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    border: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 24px;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    z-index: 999; transition: transform 0.3s ease;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: #50c878; color: #50c878; }
+  .toast.err { border-color: #d04040; color: #d04040; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏠 瓷砖仓库</h1>
+  <div class="count" id="totalCount">共 0 条</div>
+</div>
+
+<!-- Search -->
+<div class="search-area">
+  <input type="text" id="searchInput" placeholder="输入型号查询" autocomplete="off" />
+  <button class="search-btn" onclick="doSearch()">🔍</button>
+  <div class="search-suggestions" id="suggestions"></div>
+</div>
+
+<!-- Result -->
+<div class="result-area" id="resultArea"></div>
+
+<!-- No Result -->
+<div class="no-result" id="noResult">
+  <div class="icon">🔍</div>
+  <div>未找到该型号</div>
+</div>
+
+<!-- List -->
+<div class="list-area show" id="listArea"></div>
+
+<!-- Add -->
+<div class="add-area" id="addArea">
+  <div class="form-group">
+    <label>型号 *</label>
+    <input type="text" id="inputModel" placeholder="例如 801" maxlength="30" />
+  </div>
+  <div class="form-group">
+    <label>存放位置 *</label>
+    <input type="text" id="inputZone" placeholder="例如 2区" maxlength="50" />
+  </div>
+  <div class="form-group">
+    <label>备注</label>
+    <textarea id="inputNote" placeholder="可选" maxlength="200"></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-secondary" onclick="resetForm()">重置</button>
+    <button class="btn btn-primary" onclick="addRecord()">保存</button>
+  </div>
+</div>
+
+<!-- Bottom Tabs -->
+<div class="bottom-tabs">
+  <div class="bottom-tab active" id="tabSearch" onclick="switchTab('search')">🔍 查询</div>
+  <div class="bottom-tab" id="tabList" onclick="switchTab('list')">📋 列表</div>
+  <div class="bottom-tab" id="tabAdd" onclick="switchTab('add')">➕ 添加</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'tile_warehouse_v4';
+let records = [];
+
+// 初始数据
+const initialData = [
+  { model: "801", zone: "2区", note: "C3色" },
+  { model: "157TL265", zone: "2区", note: "18s" },
+  { model: "8017", zone: "2区", note: "无" },
+  { model: "1511", zone: "2区", note: "特价" },
+  { model: "9805", zone: "2区", note: "607色" },
+  { model: "99075", zone: "4区", note: "803色" },
+  { model: "9514", zone: "4区", note: "" },
+  { model: "806", zone: "4区", note: "" },
+  { model: "8017", zone: "4区", note: "" },
+  { model: "8250", zone: "6区", note: "无" },
+  { model: "157TL278", zone: "6区", note: "无" },
+  { model: "157TL52", zone: "6区", note: "无" },
+  { model: "9514", zone: "6区", note: "无" },
+  { model: "处理砖40×80", zone: "6区", note: "特殊品类" },
+  { model: "8826", zone: "6区", note: "无" },
+  { model: "80503", zone: "8区", note: "无" },
+  { model: "3551P", zone: "8区", note: "无" },
+  { model: "6004", zone: "8区", note: "无" },
+  { model: "6002", zone: "8区", note: "无" },
+  { model: "4003", zone: "8区", note: "无" },
+  { model: "0000全白", zone: "8区", note: "无" },
+  { model: "红色30×30", zone: "8区", note: "无" },
+  { model: "157TL61A", zone: "3区", note: "" },
+  { model: "157TL52", zone: "3区", note: "" },
+  { model: "75Y12", zone: "3区", note: "" },
+  { model: "15813", zone: "3区", note: "" },
+  { model: "15723", zone: "3区", note: "" },
+  { model: "157TL52", zone: "5区", note: "无" },
+  { model: "15717A", zone: "5区", note: "139件" },
+  { model: "157TL04A", zone: "5区", note: "65件" },
+  { model: "75Y12", zone: "5区", note: "65片" },
+  { model: "3622", zone: "10区", note: "无" },
+  { model: "5812", zone: "10区", note: "B11色" },
+  { model: "355P", zone: "10区", note: "无" },
+  { model: "6068B", zone: "10区", note: "10件" },
+  { model: "全白", zone: "10区", note: "工地" },
+  { model: "80911", zone: "12区", note: "九牧印象" },
+  { model: "8006", zone: "12区", note: "罗马" },
+  { model: "86H06", zone: "14区", note: "无" },
+  { model: "86H03", zone: "14区", note: "无" },
+  { model: "99061", zone: "14区", note: "无" },
+  { model: "9201", zone: "14区", note: "无" },
+  { model: "99265", zone: "14区", note: "无" },
+  { model: "99139", zone: "14区", note: "无" },
+  { model: "99137", zone: "14区", note: "无" },
+  { model: "99052", zone: "16区", note: "472色" },
+  { model: "99075", zone: "16区", note: "116色" },
+  { model: "8T524", zone: "16区", note: "仿古砖" },
+  { model: "5807A", zone: "16区", note: "无" },
+  { model: "5908", zone: "16区", note: "无" },
+  { model: "5808A", zone: "18区", note: "无" },
+  { model: "4005", zone: "18区", note: "无" },
+  { model: "6068A", zone: "7区", note: "无" },
+  { model: "6015A", zone: "7区", note: "无" },
+  { model: "6037B", zone: "7区", note: "无" },
+  { model: "48Y02", zone: "7区", note: "小号" },
+  { model: "88J16A", zone: "7区", note: "10件" },
+  { model: "85F74", zone: "7区", note: "13件" },
+  { model: "85F74", zone: "7区", note: "006色" },
+  { model: "全白", zone: "9区", note: "小色号" },
+  { model: "6032A", zone: "9区", note: "无" },
+  { model: "26067", zone: "9区", note: "无" },
+  { model: "6605", zone: "9区", note: "白聚晶" },
+  { model: "85F91", zone: "9区", note: "无" },
+  { model: "99138", zone: "11区", note: "无" },
+  { model: "8826", zone: "11区", note: "7件" },
+  { model: "8821", zone: "11区", note: "大号" },
+  { model: "61J6S", zone: "11区", note: "白聚晶" },
+  { model: "6019A", zone: "11区", note: "无" },
+  { model: "3551P", zone: "11区", note: "60片" },
+  { model: "12621", zone: "11区", note: "木纹" },
+  { model: "99046", zone: "13区", note: "无" },
+  { model: "8821", zone: "13区", note: "无" },
+  { model: "85F167", zone: "15区", note: "006色" },
+  { model: "5801B", zone: "15区", note: "无" },
+  { model: "85L08", zone: "15区", note: "无" },
+  { model: "5906", zone: "17区", note: "" },
+  { model: "85F52", zone: "20区", note: "4件" },
+  { model: "4802", zone: "20区", note: "12色" },
+  { model: "12H04", zone: "20区", note: "15件" },
+  { model: "4803", zone: "20区", note: "无" },
+  { model: "85F50", zone: "20区", note: "无" },
+  { model: "58607", zone: "20区", note: "罗马" },
+  { model: "86H10", zone: "仓库门口左手贴墙", note: "红蜻蜓" },
+  { model: "88Y12A", zone: "仓库门口左手贴墙", note: "无" },
+  { model: "86H07", zone: "仓库门口左手贴墙", note: "红蜻蜓" },
+  { model: "15818", zone: "仓库门口左手贴墙", note: "红蜻蜓" },
+  { model: "85J06", zone: "4区和3区中间", note: "57片" },
+  { model: "8801", zone: "4区和3区中间", note: "34片" },
+  { model: "58526D", zone: "5区和6区中间", note: "无" },
+  { model: "1051P", zone: "5区和6区中间", note: "无" },
+  { model: "7301", zone: "5区和6区中间", note: "无" },
+  { model: "3008", zone: "5区和6区中间", note: "无" },
+  { model: "8005D", zone: "5区和6区中间", note: "无" },
+  { model: "6500", zone: "5区和6区中间", note: "全白" },
+  { model: "3603", zone: "5区和6区中间", note: "无" },
+  { model: "7300", zone: "5区和6区中间", note: "无" },
+  { model: "全黑", zone: "5区和6区中间", note: "600x600" },
+  { model: "58526B", zone: "5区和6区中间", note: "无" },
+  { model: "88J16A", zone: "7区和8区中间", note: "无" },
+  { model: "85F61", zone: "7区和8区中间", note: "26色" },
+  { model: "48Y02A", zone: "7区和8区中间", note: "022色" },
+  { model: "161Y48A", zone: "9区和10区中间", note: "003色" },
+  { model: "85F74", zone: "9区和10区中间", note: "26色" },
+  { model: "85F146", zone: "9区和10区中间", note: "无" },
+  { model: "5828", zone: "9区和10区中间", note: "无" },
+  { model: "4806", zone: "9区和10区中间", note: "无" },
+  { model: "9539", zone: "9区和10区中间", note: "无" },
+  { model: "85F50", zone: "11区和12区中间", note: "无" },
+  { model: "85F31", zone: "11区和12区中间", note: "无" },
+  { model: "85F52", zone: "11区和12区中间", note: "无" },
+  { model: "4805", zone: "11区和12区中间", note: "无" },
+  { model: "8826", zone: "15区和16区中间", note: "无" },
+  { model: "9201", zone: "15区和16区中间", note: "35件" },
+  { model: "99052", zone: "15区和16区中间", note: "453色" },
+  { model: "99052", zone: "15区和16区中间", note: "626色" },
+  { model: "白聚晶", zone: "15区和16区中间", note: "便宜" },
+  { model: "86H05", zone: "15区和16区中间", note: "无" },
+  { model: "99137", zone: "17区和18区中间", note: "322色" },
+  { model: "99052", zone: "17区和18区中间", note: "472色" },
+  { model: "86H01", zone: "17区和18区中间", note: "无" }
+];
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      records = JSON.parse(raw);
+    } else {
+      records = initialData;
+      saveData();
+    }
+  } catch(e) { records = []; }
+  document.getElementById('totalCount').textContent = '共 ' + records.length + ' 条';
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  document.getElementById('totalCount').textContent = '共 ' + records.length + ' 条';
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Search
+const searchInput = document.getElementById('searchInput');
+const suggestionsEl = document.getElementById('suggestions');
+const resultArea = document.getElementById('resultArea');
+const noResult = document.getElementById('noResult');
+
+searchInput.addEventListener('input', function() {
+  resultArea.classList.remove('show');
+  noResult.classList.remove('show');
+  document.querySelector('.bottom-tabs').style.display = '';
+  document.getElementById('listArea').style.display = '';
+  showSuggestions();
+});
+
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    doSearch();
+    suggestionsEl.classList.remove('show');
+  }
+});
+
+function showSuggestions() {
+  const q = searchInput.value.trim();
+  if (!q) { suggestionsEl.classList.remove('show'); return; }
+  
+  // 检查是否有精确匹配
+  const exactMatch = records.find(r => r.model.toLowerCase() === q.toLowerCase());
+  if (exactMatch) {
+    // 有精确匹配，不显示候选列表，直接出结果
+    suggestionsEl.classList.remove('show');
+    doSearch();
+    return;
+  }
+  
+  // 没有精确匹配，显示模糊匹配的候选
+  const matches = records.filter(r => r.model.toLowerCase().includes(q.toLowerCase())).slice(0, 6);
+  if (matches.length === 0) { suggestionsEl.classList.remove('show'); return; }
+  suggestionsEl.innerHTML = matches.map(r =>
+    '<div class="suggestion-item" onclick="selectSuggestion(\'' + esc(r.model) + '\')">' +
+      '<span class="sug-model">' + esc(r.model) + '</span>' +
+      '<span class="sug-zone">' + esc(r.zone) + '</span>' +
+    '</div>'
+  ).join('');
+  suggestionsEl.classList.add('show');
+}
+
+function selectSuggestion(model) {
+  searchInput.value = model;
+  suggestionsEl.classList.remove('show');
+  // 收起键盘
+  searchInput.blur();
+  doSearch();
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-area')) {
+    suggestionsEl.classList.remove('show');
+  }
+});
+
+function doSearch() {
+  // 收起键盘
+  searchInput.blur();
+  
+  const q = searchInput.value.trim();
+  if (!q) {
+    resultArea.classList.remove('show');
+    noResult.classList.remove('show');
+    document.querySelector('.bottom-tabs').style.display = '';
+    document.getElementById('listArea').style.display = '';
+    return;
+  }
+  
+  // 先尝试精确匹配
+  let matches = records.filter(r => r.model.toLowerCase() === q.toLowerCase());
+  
+  // 如果精确匹配没结果，再用模糊匹配
+  if (matches.length === 0) {
+    matches = records.filter(r => r.model.toLowerCase().includes(q.toLowerCase()));
+  }
+  
+  if (matches.length > 0) {
+    let html = '';
+    matches.forEach((r, idx) => {
+      // 根据位置文字长度决定字号
+      const zoneClass = r.zone.length > 4 ? 'long' : '';
+      html +=
+        '<div class="model-section">' +
+          '<div class="label">型　号</div>' +
+          '<div class="value">' + esc(r.model) + '</div>' +
+        '</div>' +
+        '<div class="location-section ' + zoneClass + '">' +
+          '<div class="label">存 放 位 置</div>' +
+          '<div class="value">' + esc(r.zone) + '</div>' +
+        '</div>' +
+        '<div class="note-section">' +
+          '<div class="label">备　注</div>' +
+          '<div class="value">' + esc(r.note || '—') + '</div>' +
+        '</div>';
+      // 如果不是最后一个，加分隔线
+      if (idx < matches.length - 1) {
+        html += '<div class="result-divider"></div>';
+      }
+    });
+    resultArea.innerHTML = html;
+    resultArea.classList.add('show');
+    noResult.classList.remove('show');
+    // 隐藏底部导航和列表
+    document.querySelector('.bottom-tabs').style.display = 'none';
+    document.getElementById('listArea').style.display = 'none';
+  } else {
+    resultArea.classList.remove('show');
+    noResult.classList.add('show');
+    document.querySelector('.bottom-tabs').style.display = 'none';
+    document.getElementById('listArea').style.display = 'none';
+  }
+}
+
+// Tabs
+function switchTab(tab) {
+  document.getElementById('tabSearch').classList.toggle('active', tab === 'search');
+  document.getElementById('tabList').classList.toggle('active', tab === 'list');
+  document.getElementById('tabAdd').classList.toggle('active', tab === 'add');
+  document.getElementById('listArea').classList.toggle('show', tab === 'list');
+  document.getElementById('addArea').classList.toggle('show', tab === 'add');
+  if (tab === 'search') {
+    searchInput.focus();
+  }
+}
+
+// Toggle list item
+function toggleItem(el) {
+  const wasExpanded = el.classList.contains('expanded');
+  // 关闭所有其他
+  document.querySelectorAll('.list-item.expanded').forEach(item => item.classList.remove('expanded'));
+  if (!wasExpanded) {
+    el.classList.add('expanded');
+  }
+}
+
+// List
+function renderList() {
+  const el = document.getElementById('listArea');
+  if (records.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-dim);">暂无数据</div>';
+    return;
+  }
+  el.innerHTML = records.map((r, i) =>
+    '<div class="list-item" onclick="toggleItem(this)">' +
+      '<div class="list-item-info">' +
+        '<div class="list-item-model">' + esc(r.model) + '</div>' +
+        '<div class="list-item-detail">' +
+          '<span>📍 ' + esc(r.zone) + '</span>' +
+          (r.note ? '<span>📝 ' + esc(r.note) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="list-item-hint">点击管理</div>' +
+      '<div class="list-item-actions">' +
+        '<button class="btn-action" onclick="event.stopPropagation();editRecord(' + i + ')">✏️ 编辑</button>' +
+        '<button class="btn-action del" onclick="event.stopPropagation();deleteRecord(' + i + ')">🗑️ 删除</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// Add
+function addRecord() {
+  const model = document.getElementById('inputModel').value.trim();
+  const zone  = document.getElementById('inputZone').value.trim();
+  const note  = document.getElementById('inputNote').value.trim();
+  if (!model) { toast('请输入型号', 'err'); return; }
+  if (!zone)  { toast('请输入位置', 'err'); return; }
+  records.push({ model, zone, note });
+  saveData();
+  renderList();
+  resetForm();
+  toast('✅ 添加成功', 'ok');
+  switchTab('list');
+}
+
+function resetForm() {
+  document.getElementById('inputModel').value = '';
+  document.getElementById('inputZone').value  = '';
+  document.getElementById('inputNote').value  = '';
+}
+
+// Edit
+let editIdx = -1;
+function editRecord(idx) {
+  editIdx = idx;
+  const r = records[idx];
+  document.getElementById('inputModel').value = r.model;
+  document.getElementById('inputZone').value  = r.zone;
+  document.getElementById('inputNote').value  = r.note || '';
+  switchTab('add');
+}
+
+// Delete
+function deleteRecord(idx) {
+  const r = records[idx];
+  if (!confirm('确定删除「' + r.model + '」？')) return;
+  records.splice(idx, 1);
+  saveData();
+  renderList();
+  toast('🗑️ 已删除', 'ok');
+}
+
+// Toast
+let toastTimer;
+function toast(msg, cls) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (cls || '');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// Init
+loadData();
+renderList();
+// 自动聚焦搜索框
+setTimeout(() => searchInput.focus(), 100);
+</script>
+</body>
+</html>
